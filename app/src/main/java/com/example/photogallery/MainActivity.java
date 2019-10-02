@@ -1,19 +1,79 @@
 package com.example.photogallery;
 
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.view.MenuItem;
+import android.view.View;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import android.os.Bundle;
-import android.view.MenuItem;
-
 import com.google.android.material.navigation.NavigationView;
 
-public class MainActivity extends AppCompatActivity  implements NavigationView.OnNavigationItemSelectedListener {
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+
     private DrawerLayout drawer;
+
+    static final int REQUEST_IMAGE_CAPTURE = 0;
+
+    private String mCurrentPhotoPath;
+
+    private MediaStore mediaStore;
+
+    private FileProvider fileProvider;
+
+    protected void takePicture(View v) {
+
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+
+            Intent takepictureintent = new Intent(mediaStore.ACTION_IMAGE_CAPTURE);
+            // ensure that there's a camera activity to handle the intent
+            if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                // create the file where the photo should go
+                File photofile = null;
+                try {
+                    photofile = createImageFile();
+                } catch (IOException ex) {
+                    // error occurred while creating the file
+                }
+
+                // continue only if the file was successfully created
+                if (photofile != null) {
+                    Uri photouri = fileProvider.getUriForFile(this, "com.example.mnm.photogallery.fileprovider", photofile);
+                    takepictureintent.putExtra(mediaStore.EXTRA_OUTPUT, photouri);
+                    startActivityForResult(takepictureintent, REQUEST_IMAGE_CAPTURE);
+                }
+            }
+        }
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(imageFileName, ".jpg", storageDir);
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,8 +123,7 @@ public class MainActivity extends AppCompatActivity  implements NavigationView.O
     public void onBackPressed() {
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        }
-        else {
+        } else {
             super.onBackPressed();
         }
     }
